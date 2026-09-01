@@ -1,0 +1,281 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+from datetime import date, timedelta
+from sklearn.ensemble import RandomForestRegressor
+
+# -------------------------------------------------
+# PAGE CONFIGURATION
+# -------------------------------------------------
+st.set_page_config(
+    page_title="Sustainable Habit Tracker",
+    page_icon="🌱",
+    layout="wide"
+)
+
+# -------------------------------------------------
+# SYNTHETIC DATA GENERATION
+# -------------------------------------------------
+np.random.seed(42)
+
+n_samples = 500
+
+data = pd.DataFrame({
+    "recycling_days": np.random.randint(0, 8, n_samples),
+    "water_saved_liters": np.random.randint(0, 500, n_samples),
+    "walking_distance_km": np.random.randint(0, 50, n_samples),
+    "plastic_items_avoided": np.random.randint(0, 30, n_samples),
+    "public_transport_trips": np.random.randint(0, 15, n_samples),
+    "energy_saved_kwh": np.random.uniform(0, 100, n_samples).round(2)
+})
+
+# Create synthetic sustainability score
+data["sustainability_score"] = (
+    data["recycling_days"] * 5
+    + data["water_saved_liters"] * 0.05
+    + data["walking_distance_km"] * 0.8
+    + data["plastic_items_avoided"] * 1.5
+    + data["public_transport_trips"] * 2
+    + data["energy_saved_kwh"] * 0.5
+    + np.random.normal(0, 5, n_samples)
+)
+
+data["sustainability_score"] = (
+    data["sustainability_score"]
+    .clip(0, 100)
+    .round(2)
+)
+
+# -------------------------------------------------
+# MACHINE LEARNING MODEL
+# -------------------------------------------------
+features = [
+    "recycling_days",
+    "water_saved_liters",
+    "walking_distance_km",
+    "plastic_items_avoided",
+    "public_transport_trips",
+    "energy_saved_kwh"
+]
+
+X = data[features]
+y = data["sustainability_score"]
+
+model = RandomForestRegressor(
+    n_estimators=100,
+    random_state=42
+)
+
+model.fit(X, y)
+
+# -------------------------------------------------
+# APP TITLE
+# -------------------------------------------------
+st.title("🌱 Sustainable Habit Tracker")
+st.write(
+    "Track your eco-friendly habits and use AI to estimate "
+    "your sustainability score."
+)
+
+# -------------------------------------------------
+# SIDEBAR INPUT
+# -------------------------------------------------
+st.sidebar.header("🌍 Enter Your Weekly Habits")
+
+recycling_days = st.sidebar.slider(
+    "Recycling Days",
+    0, 7, 3
+)
+
+water_saved_liters = st.sidebar.slider(
+    "Water Saved (Liters)",
+    0, 500, 100
+)
+
+walking_distance_km = st.sidebar.slider(
+    "Walking/Cycling Distance (KM)",
+    0, 50, 10
+)
+
+plastic_items_avoided = st.sidebar.slider(
+    "Plastic Items Avoided",
+    0, 30, 5
+)
+
+public_transport_trips = st.sidebar.slider(
+    "Public Transport Trips",
+    0, 15, 3
+)
+
+energy_saved_kwh = st.sidebar.slider(
+    "Energy Saved (kWh)",
+    0.0, 100.0, 20.0
+)
+
+# -------------------------------------------------
+# USER DATA
+# -------------------------------------------------
+user_data = pd.DataFrame({
+    "recycling_days": [recycling_days],
+    "water_saved_liters": [water_saved_liters],
+    "walking_distance_km": [walking_distance_km],
+    "plastic_items_avoided": [plastic_items_avoided],
+    "public_transport_trips": [public_transport_trips],
+    "energy_saved_kwh": [energy_saved_kwh]
+})
+
+# -------------------------------------------------
+# AI PREDICTION
+# -------------------------------------------------
+prediction = model.predict(user_data)[0]
+
+# -------------------------------------------------
+# DASHBOARD
+# -------------------------------------------------
+st.subheader("📊 Your Sustainability Dashboard")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        "🌱 Sustainability Score",
+        f"{prediction:.1f}/100"
+    )
+
+with col2:
+    total_actions = (
+        recycling_days
+        + plastic_items_avoided
+        + public_transport_trips
+    )
+
+    st.metric(
+        "✅ Eco Actions",
+        total_actions
+    )
+
+with col3:
+    estimated_co2_saved = (
+        walking_distance_km * 0.21
+        + public_transport_trips * 0.5
+        + energy_saved_kwh * 0.4
+    )
+
+    st.metric(
+        "🌍 Estimated CO₂ Saved",
+        f"{estimated_co2_saved:.2f} kg"
+    )
+
+# -------------------------------------------------
+# PROGRESS BAR
+# -------------------------------------------------
+st.subheader("📈 Sustainability Progress")
+
+progress = min(int(prediction), 100)
+
+st.progress(progress)
+
+# -------------------------------------------------
+# AI FEEDBACK
+# -------------------------------------------------
+st.subheader("🤖 AI Sustainability Insight")
+
+if prediction >= 80:
+    st.success(
+        "Excellent! You are maintaining highly sustainable habits. "
+        "Keep up the amazing work!"
+    )
+
+elif prediction >= 60:
+    st.info(
+        "Great progress! Try reducing more plastic use and increasing "
+        "recycling or sustainable transportation."
+    )
+
+elif prediction >= 40:
+    st.warning(
+        "You are making progress, but there is room for improvement. "
+        "Focus on saving water and reducing energy consumption."
+    )
+
+else:
+    st.error(
+        "Your sustainability score is currently low. Start with small "
+        "daily habits such as recycling, walking, and reducing plastic use."
+    )
+
+# -------------------------------------------------
+# HABIT SUMMARY
+# -------------------------------------------------
+st.subheader("📋 Your Habit Summary")
+
+summary = pd.DataFrame({
+    "Habit": [
+        "Recycling Days",
+        "Water Saved (Liters)",
+        "Walking/Cycling (KM)",
+        "Plastic Items Avoided",
+        "Public Transport Trips",
+        "Energy Saved (kWh)"
+    ],
+    "Value": [
+        recycling_days,
+        water_saved_liters,
+        walking_distance_km,
+        plastic_items_avoided,
+        public_transport_trips,
+        energy_saved_kwh
+    ]
+})
+
+st.dataframe(
+    summary,
+    use_container_width=True
+)
+
+# -------------------------------------------------
+# SYNTHETIC DATA VISUALIZATION
+# -------------------------------------------------
+st.subheader("📊 Synthetic Sustainability Data")
+
+chart_data = data[
+    [
+        "recycling_days",
+        "water_saved_liters",
+        "walking_distance_km",
+        "sustainability_score"
+    ]
+]
+
+st.scatter_chart(
+    chart_data,
+    x="walking_distance_km",
+    y="sustainability_score"
+)
+
+# -------------------------------------------------
+# ECO TIPS
+# -------------------------------------------------
+st.subheader("💡 Sustainable Living Tips")
+
+tips = [
+    "♻️ Separate recyclable materials from general waste.",
+    "💧 Turn off taps when they are not in use.",
+    "🚶 Walk or cycle for short journeys.",
+    "🛍️ Carry reusable shopping bags.",
+    "🚌 Use public transportation when possible.",
+    "💡 Switch off lights and appliances when not needed."
+]
+
+for tip in tips:
+    st.write(tip)
+
+# -------------------------------------------------
+# FOOTER
+# -------------------------------------------------
+st.divider()
+
+st.caption(
+    "🌱 Sustainable Habit Tracker Web App | "
+    "Built with Python, Streamlit, Scikit-learn, and Synthetic Data"
+)
